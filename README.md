@@ -6,6 +6,10 @@ Capturing screenshot at the desired path and open to edit on key press
 1. Windows OS
 2. Python 3
 
+## Download Installer
+[Snipper-Setup.exe](https://drive.google.com/file/d/1fH5gacXyLK33tuin5Zn_TBEPh3y_P9vR/view?usp=sharing)
+
+
 ## Install
 ```bash
 pip install -r requirements.txt
