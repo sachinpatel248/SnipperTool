@@ -18,6 +18,7 @@ from plyer import notification
 
 
 class SnipperTool():
+
     def __init__(self,
                  master,
                  title='Snipper Tool',
@@ -66,6 +67,7 @@ class SnipperTool():
         self._set_file_path()
 
         self._set_window_size_and_position()
+        self._draw_layout()
         self._draw_icon_and_logo()
         self._write_header_and_instructions()
         self._draw_text_box()
@@ -83,9 +85,15 @@ class SnipperTool():
 
         # set the dimensions & position of window
         self.master.geometry('%dx%d+%d+%d' % (self.width, self.height, x_window_pos, y_window_pos))
-        # self.master.resizable(width=False, height=False)
+        self.master.resizable(width=False, height=False)
 
-    def _draw_icon_and_logo(self):
+
+    def _draw_layout(self):
+        for i in range(1, 6):
+            self.master.columnconfigure(i, weight=1)
+        for i in range(6):
+            self.master.rowconfigure(i, weight=1)
+
         # 6 is for blank label
         padding_col = self.blank_col_padd - (self.control_padd/2) - 6
         # Left blank column
@@ -95,6 +103,7 @@ class SnipperTool():
         lbl_pad = tk.Label(self.master, text="", )
         lbl_pad.grid(row=0, column=7, padx=(0, padding_col), rowspan=11, sticky=W)
 
+    def _draw_icon_and_logo(self):
         if self.path_icon is not None and os.path.exists(self.path_icon):
             self.master.iconbitmap(self.path_icon)
 
@@ -104,30 +113,20 @@ class SnipperTool():
             tk_label_logo = tk.Label(self.master)
             tk_label_logo.image = self.logo
             tk_label_logo['image'] = self.logo
-            tk_label_logo.grid(row=0, column=1, columnspan=2,
-                               padx=(self.control_padd/2, 0), pady=15, sticky=W+E)
-
-    def _create_label(self, label_text, x_text_pos, y_text_pos, font=("Helvetica", 8)):
-        '''This will draw label on window'''
-        label = tk.Label(self.master, text=label_text, font=font)
-        label.place(x=x_text_pos, y=y_text_pos)
+            tk_label_logo.grid(row=0, column=2, columnspan=1, sticky=W+E,
+                               padx=(self.control_padd/2, 0), pady=(self.control_padd, 0))
 
     def _write_header_and_instructions(self):
-
         # Header
         label_header = "Snipper Tool"
         header = tk.Label(self.master, text=label_header, font=("Arial", 25))
-        header.grid(row=0, column=3, columnspan=5, sticky=W)
+        header.grid(row=0, column=3, columnspan=4, sticky=W, pady=(self.control_padd, 0))
 
         # Instructions
         font_inst = ("Helvetica", 8)
 
-        label_inst_header = "Instructions :"
-        label_inst_header = tk.Label(self.master, text=label_inst_header, font=font_inst,)
-        label_inst_header.grid(row=7, column=1, columnspan=6, sticky=W,
-                               padx=self.control_padd/2, pady=(self.control_padd/2, 0))
-
-        label_inst = "1: Click on the ' Browse ' button to select the folder.\n" + \
+        label_inst = "Instructions :\n" + \
+                     "1: Click on the ' Browse ' button to select the folder.\n" + \
                      "2: Click on the ' Start ' button to start the process.\n" + \
                      "3: Press ' PrintScreen ' key to capture the screenshot.\n" + \
                      "4: Press ' Insert ' key to capture a screenshot & edit.\n" + \
@@ -136,10 +135,11 @@ class SnipperTool():
 
         label_inst = tk.Label(self.master, text=label_inst, font=font_inst,
                               justify=LEFT, wraplength=400, anchor=NW)
-        label_inst.grid(row=8, column=1, columnspan=6, padx=self.control_padd/2, sticky=W)
+        label_inst.grid(row=5, column=1, columnspan=6, sticky=W,
+                        padx=self.control_padd/2, pady=(0, self.control_padd/2))
 
     def _draw_text_box(self):
-        self.text_box_dir_path = tk.Entry(self.master, bd=2, width=35)
+        self.text_box_dir_path = tk.Entry(self.master, bd=2, width=36)
         self.text_box_dir_path.grid(row=1, column=1, columnspan=4, sticky=W+E,
                                     padx=self.control_padd/2, pady=(self.control_padd/2, 0))
         self.text_box_dir_path.delete(0, tk.END)
@@ -165,9 +165,8 @@ class SnipperTool():
 
     def _draw_settings(self):
         font_text = ('Callibri', '8')
-        # width_drop_down = 
         # Image extension type drop-down
-        label_type = tk.Label(self.master, text="Type :")
+        label_type = tk.Label(self.master, text="Type:", anchor=W)
                                                 # "Editor:"
         label_type.grid(row=2, column=1, sticky=W,
                         padx=(self.control_padd/2, 0), pady=self.control_padd/2)
@@ -175,8 +174,8 @@ class SnipperTool():
         self.cmb_box_image_ext = ttk.Combobox(self.master, width=8,
                                               state='readonly', font=font_text,
                                               values=list(self.dict_image_format.keys()))
-        self.cmb_box_image_ext.grid(row=2, column=2, sticky=W,
-                                    # padx=(0, 0), 
+        self.cmb_box_image_ext.grid(row=2, column=2, sticky=W+E,
+                                    padx=(0, self.control_padd/2),
                                     pady=self.control_padd/2)
 
         # Image editor type drop-down
@@ -185,10 +184,10 @@ class SnipperTool():
                           padx=(self.control_padd/2, 0), pady=self.control_padd/2)
 
         image_editors = list(self.dict_image_editor_application.keys())
-        self.cmb_box_image_editor = ttk.Combobox(self.master, width=8, state='readonly',
+        self.cmb_box_image_editor = ttk.Combobox(self.master, width=7, state='readonly',
                                                  font=font_text, values=image_editors)
-        self.cmb_box_image_editor.grid(row=2, column=4, sticky=W,
-                                    #    padx=(0, 0), 
+        self.cmb_box_image_editor.grid(row=2, column=4, sticky=W+E,
+                                       padx=(0, self.control_padd/2),
                                        pady=self.control_padd/2)
 
         # Save config check box
