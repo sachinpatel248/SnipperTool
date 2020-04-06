@@ -1,9 +1,12 @@
 import os
+import sys
 import time
 import json
+import ctypes
 from threading import Thread
 
 import tkinter as tk
+from tkinter import W, N, S, E, NW, LEFT
 from tkinter import BooleanVar, messagebox, filedialog, ttk
 
 import docx
@@ -13,12 +16,12 @@ from PIL import Image, ImageGrab, ImageTk
 from pynput import keyboard
 from plyer import notification
 
-class SnipperTool():
 
+class SnipperTool():
     def __init__(self,
                  master,
                  title='Snipper Tool',
-                 width=480,
+                 width=500,
                  height=350,
                  dict_image_format={'PNG':'.png', 'BMP':'.bmp', 'JPEG':'.jpeg'},
                  dict_image_editor_application={'MS Paint': 'mspaint'}):
@@ -30,6 +33,9 @@ class SnipperTool():
 
         self.dict_image_format = dict_image_format
         self.dict_image_editor_application = dict_image_editor_application
+
+        self.control_padd = 10 # padding between widgets
+        self.blank_col_padd = 50 # padding blank col
 
         self.text_box_dir_path = None
         self.btn_browse = None
@@ -50,6 +56,7 @@ class SnipperTool():
         self.show_image_captured_notification = True # No usage at the moment
 
         self._draw_window()
+
 
     # region Drawing Window
 
@@ -76,9 +83,17 @@ class SnipperTool():
 
         # set the dimensions & position of window
         self.master.geometry('%dx%d+%d+%d' % (self.width, self.height, x_window_pos, y_window_pos))
-        self.master.resizable(width=False, height=False)
+        # self.master.resizable(width=False, height=False)
 
     def _draw_icon_and_logo(self):
+        # 6 is for blank label
+        padding_col = self.blank_col_padd - (self.control_padd/2) - 6
+        # Left blank column
+        lbl_pad = tk.Label(self.master, text="", )
+        lbl_pad.grid(row=0, column=0, padx=(padding_col, 0), rowspan=11, sticky=W)
+        # Right blank column
+        lbl_pad = tk.Label(self.master, text="", )
+        lbl_pad.grid(row=0, column=7, padx=(0, padding_col), rowspan=11, sticky=W)
 
         if self.path_icon is not None and os.path.exists(self.path_icon):
             self.master.iconbitmap(self.path_icon)
@@ -86,9 +101,11 @@ class SnipperTool():
             image_logo = (Image.open(self.path_icon)).resize((50, 50))
             self.logo = ImageTk.PhotoImage(image_logo)
 
-            tk_label_logo = tk.Label(self.master, image=self.logo)
+            tk_label_logo = tk.Label(self.master)
+            tk_label_logo.image = self.logo
             tk_label_logo['image'] = self.logo
-            tk_label_logo.place(x=48, y=6)
+            tk_label_logo.grid(row=0, column=1, columnspan=2,
+                               padx=(self.control_padd/2, 0), pady=15, sticky=W+E)
 
     def _create_label(self, label_text, x_text_pos, y_text_pos, font=("Helvetica", 8)):
         '''This will draw label on window'''
@@ -96,80 +113,90 @@ class SnipperTool():
         label.place(x=x_text_pos, y=y_text_pos)
 
     def _write_header_and_instructions(self):
+
         # Header
         label_header = "Snipper Tool"
-        self._create_label(label_header, 125, 13, font=("Arial", 30))
+        header = tk.Label(self.master, text=label_header, font=("Arial", 25))
+        header.grid(row=0, column=3, columnspan=5, sticky=W)
 
-        # Instructions -----
-        y_label = 225
-        label_instruction_header = "Instructions :"
-        self._create_label(label_instruction_header, 50, y_label)
+        # Instructions
+        font_inst = ("Helvetica", 8)
 
-        inst_1 = "1: Click on the 'Browse' button to select the folder."
-        inst_2 = "2: Click on the ' Start ' button to start the process."
-        inst_3 = "3: Press 'PrintScreen' key to capture the screenshot."
-        inst_4 = "4: Press 'Insert' key to capture a screenshot & edit."
-        inst_5 = "5: Click on 'Build Docx' button to create a document."
-        inst_6 = "    With images available in selected folder."
+        label_inst_header = "Instructions :"
+        label_inst_header = tk.Label(self.master, text=label_inst_header, font=font_inst,)
+        label_inst_header.grid(row=7, column=1, columnspan=6, sticky=W,
+                               padx=self.control_padd/2, pady=(self.control_padd/2, 0))
 
-        # label_instruction = inst_1 + '\n' + inst_2 + '\n' + inst_3 + '\n' + inst_4 + '\n' + inst_5
-        # self.create_label(label_instruction, 50, 250)
+        label_inst = "1: Click on the ' Browse ' button to select the folder.\n" + \
+                     "2: Click on the ' Start ' button to start the process.\n" + \
+                     "3: Press ' PrintScreen ' key to capture the screenshot.\n" + \
+                     "4: Press ' Insert ' key to capture a screenshot & edit.\n" + \
+                     "5: Click on ' Build Docx ' button to create a document.\n" + \
+                     "    With images available in selected folder."
 
-        y_label = 245
-        y_increment = 16
-        self._create_label(inst_1, 50, y_label)
-        self._create_label(inst_2, 50, y_label + y_increment * 1)
-        self._create_label(inst_3, 50, y_label + y_increment * 2)
-        self._create_label(inst_4, 50, y_label + y_increment * 3)
-        self._create_label(inst_5, 50, y_label + y_increment * 4)
-        self._create_label(inst_6, 50, y_label + y_increment * 5)
+        label_inst = tk.Label(self.master, text=label_inst, font=font_inst,
+                              justify=LEFT, wraplength=400, anchor=NW)
+        label_inst.grid(row=8, column=1, columnspan=6, padx=self.control_padd/2, sticky=W)
 
     def _draw_text_box(self):
-        self.text_box_dir_path = tk.Entry(self.master, bd=2, width=46)
-        self.text_box_dir_path.place(x=50, y=94)
+        self.text_box_dir_path = tk.Entry(self.master, bd=2, width=35)
+        self.text_box_dir_path.grid(row=1, column=1, columnspan=4, sticky=W+E,
+                                    padx=self.control_padd/2, pady=(self.control_padd/2, 0))
         self.text_box_dir_path.delete(0, tk.END)
 
-    def _create_button(self, button_text, x_pos, y_pos, button_width=10, button_click_command=None):
-        button = tk.Button(self.master, text=button_text, command=button_click_command)
-        button.config(width=button_width)
-        button.place(x=x_pos, y=y_pos)
-
-        return button
-
     def _draw_buttons(self):
-        y_pos = 90
-        self.btn_browse = self._create_button("Browse", 350, y_pos, 10, self._browse_dir)
 
-        y_pos = y_pos + 85
-        self.btn_start = self._create_button("Start", 50, y_pos, 17, self._start_capture_process)
-        # self.btn_start.size(width = 130)
-        # self.btn_new_folder = self._create_button("New Folder", 150, y, 10, self.create_new_dir)
+        self.btn_browse = tk.Button(self.master, text="Browse", width=10, command=self._browse_dir)
+        self.btn_browse.grid(row=1, column=5, sticky=W+N+E+S,
+                             padx=self.control_padd/2, pady=self.control_padd/2)
 
-        self.btn_create_docx = self._create_button("Create Docx", 200, y_pos,
-                                                   17, self._create_document)
+        self.btn_start = tk.Button(self.master, text="Start", command=self._start_capture_process)
+        self.btn_start.grid(row=3, column=1, columnspan=2, sticky=W+N+E+S,
+                            padx=self.control_padd/2, pady=self.control_padd/2)
 
-        self.btn_exit = self._create_button("Exit", 350, y_pos, 10, self.exit)
+        self.btn_create_docx = tk.Button(self.master, text="Create Docx",
+                                         command=self._create_document)
+        self.btn_create_docx.grid(row=3, column=3, columnspan=2, sticky=W+N+E+S,
+                                  padx=self.control_padd/2, pady=self.control_padd/2)
+
+        self.btn_exit = tk.Button(self.master, text="Exit", width=10, command=self.exit)
+        self.btn_exit.grid(row=3, column=5, sticky=W+N+E+S,
+                           padx=self.control_padd/2, pady=self.control_padd/2)
 
     def _draw_settings(self):
-        y_pos = 135
-        self._create_label('Type:  ', 50, y_pos, font=("Helvetica", 8))
-        self.cmb_box_image_ext = ttk.Combobox(self.master,
-                                              values=list(self.dict_image_format.keys()),
-                                              state='readonly', font=("Helvetica", 8))
-        self.cmb_box_image_ext.place(x=85, y=y_pos, width=95)
+        font_text = ('Callibri', '8')
+        # width_drop_down = 
+        # Image extension type drop-down
+        label_type = tk.Label(self.master, text="Type :")
+                                                # "Editor:"
+        label_type.grid(row=2, column=1, sticky=W,
+                        padx=(self.control_padd/2, 0), pady=self.control_padd/2)
 
-        self._create_label('Editor:', 198, y_pos, font=("Helvetica", 8))
+        self.cmb_box_image_ext = ttk.Combobox(self.master, width=8,
+                                              state='readonly', font=font_text,
+                                              values=list(self.dict_image_format.keys()))
+        self.cmb_box_image_ext.grid(row=2, column=2, sticky=W,
+                                    # padx=(0, 0), 
+                                    pady=self.control_padd/2)
+
+        # Image editor type drop-down
+        label_editor = tk.Label(self.master, text="Editor:", )
+        label_editor.grid(row=2, column=3, sticky=W,
+                          padx=(self.control_padd/2, 0), pady=self.control_padd/2)
+
         image_editors = list(self.dict_image_editor_application.keys())
-        self.cmb_box_image_editor = ttk.Combobox(self.master,
-                                                 values=image_editors,
-                                                 state='readonly', font=("Helvetica", 8))
-        self.cmb_box_image_editor.place(x=235, y=y_pos, width=94)
+        self.cmb_box_image_editor = ttk.Combobox(self.master, width=8, state='readonly',
+                                                 font=font_text, values=image_editors)
+        self.cmb_box_image_editor.grid(row=2, column=4, sticky=W,
+                                    #    padx=(0, 0), 
+                                       pady=self.control_padd/2)
 
-        y_pos = y_pos - 2
+        # Save config check box
         chk_box_save = tk.Checkbutton(self.master, text='Save config',
                                       variable=self.chk_box_save_setings,
                                       onvalue=True, offvalue=False, command=self._save_setting)
-        chk_box_save.place(x=345, y=y_pos)
+        chk_box_save.grid(row=2, column=5, sticky=W,
+                          padx=self.control_padd/2, pady=self.control_padd/2)
 
         self._set_default_settings_value()
 
@@ -208,13 +235,16 @@ class SnipperTool():
             with open(self.path_settings_file, "r") as read_file:
                 settings = json.load(read_file)
 
-            index = list(self.dict_image_format.keys()).index(settings['image_type'])
-            self.cmb_box_image_ext.current(index)
+            list_keys = list(self.dict_image_format.keys())
+            if 'image_type' in settings and settings['image_type'] in list_keys:
+                self.cmb_box_image_ext.current(list_keys.index(settings['image_type']))
 
-            index = list(self.dict_image_editor_application.keys()).index(settings['image_editor'])
-            self.cmb_box_image_editor.current(index)
+            list_keys = list(self.dict_image_editor_application.keys())
+            if 'image_editor' in settings and settings['image_editor'] in list_keys:
+                self.cmb_box_image_editor.current(list_keys.index(settings['image_editor']))
 
-            self.chk_box_save_setings.set(settings['save_config'])
+            if 'save_config' in settings and isinstance(settings['save_config'], bool):
+                self.chk_box_save_setings.set(settings['save_config'])
 
     def _save_setting(self, event=None):
         try:
@@ -237,6 +267,7 @@ class SnipperTool():
         dir_path = filedialog.askdirectory()
         self.text_box_dir_path.delete(0, tk.END)
         self.text_box_dir_path.insert(0, dir_path)
+
 
     # region Capture Process
 
@@ -316,6 +347,7 @@ class SnipperTool():
             path_doc = os.path.abspath(os.path.join(self.text_box_dir_path.get(), doc_name))
             doc.save(path_doc)
 
+            # Show messsage
             count_images = str(len(list_path_images_in_dir))
             msg = "Word document created with " + count_images + " images at " + path_doc + '.'
             messagebox.showinfo(self.title, msg)
@@ -336,13 +368,16 @@ class SnipperTool():
 
     # endregion Create Document
 
+
     def exit(self):
         """To close the application"""
         self.master.destroy()
 
+
     def time_stamp(self):
         """Returns time stamp with custom format as string"""
         return str(time.strftime("%Y-%m-%d-%H-%M-%S"))
+
 
     def _notify(self, message: str, timeout: int, title: str, app_icon: str) -> None:
         """
@@ -357,6 +392,12 @@ class SnipperTool():
         notification.notify(title=title, message=message,
                             app_name=title, app_icon=app_icon,
                             timeout=timeout)
+
+
+# DPI aware
+if 'win' in sys.platform:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+
 
 if __name__ == "__main__":
     MASTER = tk.Tk()
