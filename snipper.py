@@ -3,6 +3,7 @@ import sys
 import time
 import json
 import ctypes
+import subprocess
 from threading import Thread
 
 import tkinter as tk
@@ -309,8 +310,8 @@ class SnipperTool():
 
         if open_image:
             app_name = self.dict_image_editor_application[self.cmb_box_image_editor.get()]
-            open_image_in_editor_cmd = app_name + ' ' + image_file_path
-            os.system(open_image_in_editor_cmd)
+            open_image_in_editor_cmd = [app_name, os.path.abspath(image_file_path)]
+            subprocess.Popen(open_image_in_editor_cmd, shell=True)
 
     # endregion Capture Process
 
