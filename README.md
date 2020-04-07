@@ -1,6 +1,8 @@
 # SnipperTool
 Capturing screenshot at the desired path and open to edit on key press
 
+## Overview
+![Tool overview - Gif](gif/snipper_tool.gif)
 
 ### Prerequisites
 1. Windows OS
