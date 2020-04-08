@@ -9,7 +9,7 @@ Capturing screenshot at the desired path and open to edit on key press
 2. Python 3
 
 ## Download Installer
-[Snipper-Setup.exe](https://drive.google.com/file/d/17xPWuFWwxncafR03Jknz_zwPEzewIvX-/view?usp=sharing)
+*Windows* - [Snipper-Setup.exe](https://drive.google.com/file/d/17xPWuFWwxncafR03Jknz_zwPEzewIvX-/view?usp=sharing)
 
 
 ## Install
