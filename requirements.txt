@@ -1,4 +1,4 @@
 plyer==1.4.3
 pynput==1.6.8
 python-docx==0.8.10
-Pillow==7.2
+Pillow==9.0.0
